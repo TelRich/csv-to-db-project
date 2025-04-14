@@ -44,6 +44,30 @@ Create a `config.json` file in the project directory with the following structur
 }
 ```
 
+## Project Structure
+```
+csv-to-db-project/
+│
+├── csv_module.py      # Core functionality
+├── config.json        # Database configuration
+├── main.py           # Example script
+└── README.md         # Documentation
+```
+
+## Sample Data Structure
+The CSV file contains flight records with the following columns:
+- flight_id (int): Unique identifier
+- departure (str): Departure airport code 
+- arrival (str): Arrival airport code
+- was_cancelled (bool): Flight cancellation status
+- delay_minutes (int): Delay in minutes
+
+Example row:
+```
+flight_id,departure,arrival,was_cancelled,delay_minutes
+1001,JFK,LAX,False,15
+```
+
 ## Usage
 
 ### Running the Script
