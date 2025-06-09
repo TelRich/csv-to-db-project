@@ -4,7 +4,7 @@ import time
 def main():
     # Print visual feedback for video demo
     print("1. Downloading CSV data...")
-    CSV_URL = "https://drive.usercontent.google.com/u/0/uc?id=1TQRSONybodmFG7yBrMuCxb2JRFVaowJR&export=download"
+    CSV_URL = "https://drive.usercontent.google.com/download?id=15n0E-75HXN0-urQJc-AgwhfLlnsS420F&export=download&authuser=1&confirm=t&uuid=2a1bd87c-e81c-4cd3-9b28-a5beed5f212e&at=ALoNOglFBw7Z5S-cOR7c3CbJ-IzV:1749422168827"
     flights = csv_downloader(csv_url=CSV_URL)
     
     print("\n2. Processing flight data...")

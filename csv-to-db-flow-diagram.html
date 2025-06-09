@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV to Database Pipeline - High Level Overview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        /* Main Pipeline Container */
+        .pipeline {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 80px;
+            flex-wrap: wrap;
+        }
+
+        /* Step Box */
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .step:hover {
+            transform: translateY(-10px);
+            border-color: #4facfe;
+            box-shadow: 0 20px 40px rgba(79, 172, 254, 0.3);
+        }
+
+        /* Step Icons */
+        .icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .step:nth-child(1) .icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .step:nth-child(2) .icon { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .step:nth-child(3) .icon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .step:nth-child(4) .icon { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .step:nth-child(5) .icon { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .step-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+        }
+
+        /* Arrows between steps */
+        .arrow {
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid #4facfe;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            opacity: 0.6;
+        }
+
+        .step:last-child .arrow {
+            display: none;
+        }
+
+        /* File Structure Section */
+        .files-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .files-title {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            color: #4facfe;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .file-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .file-card:hover {
+            transform: scale(1.05);
+            border-color: #4facfe;
+        }
+
+        .file-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #4facfe;
+            font-size: 1.2rem;
+        }
+
+        .file-purpose {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(79, 172, 254, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(79, 172, 254, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(79, 172, 254, 0);
+            }
+        }
+
+        .step {
+            animation: pulse 3s infinite;
+            animation-delay: calc(var(--order) * 0.5s);
+        }
+
+        /* Data flow dots */
+        .flow-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #4facfe;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 10px #4facfe;
+        }
+
+        @keyframes flow {
+            0% {
+                right: 100%;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                right: -10px;
+                opacity: 0;
+            }
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #4facfe;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 10px #4facfe;
+            animation: flow 3s linear infinite;
+            animation-delay: calc(var(--order) * 1s);
+        }
+
+        /* Tech Stack */
+        .tech-stack {
+            margin-top: 50px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: rgba(79, 172, 254, 0.2);
+            border-color: #4facfe;
+            transform: translateY(-3px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .pipeline {
+                gap: 20px;
+            }
+            .arrow {
+                display: none;
+            }
+            .step::after {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .step {
+                width: 180px;
+                height: 180px;
+            }
+            .icon {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV to PostgreSQL Pipeline</h1>
+        
+        <!-- Main Pipeline Flow -->
+        <div class="pipeline">
+            <div class="step" style="--order: 0;">
+                <div class="icon">📁</div>
+                <div class="step-title">CSV Source</div>
+                <div class="step-desc">Flight data from Google Drive</div>
+                <div class="arrow"></div>
+            </div>
+
+            <div class="step" style="--order: 1;">
+                <div class="icon">⬇️</div>
+                <div class="step-title">Download</div>
+                <div class="step-desc">Fetch data via HTTP request</div>
+                <div class="arrow"></div>
+            </div>
+
+            <div class="step" style="--order: 2;">
+                <div class="icon">🔄</div>
+                <div class="step-title">Transform</div>
+                <div class="step-desc">Process & filter by status</div>
+                <div class="arrow"></div>
+            </div>
+
+            <div class="step" style="--order: 3;">
+                <div class="icon">📤</div>
+                <div class="step-title">Load</div>
+                <div class="step-desc">Upload to database</div>
+                <div class="arrow"></div>
+            </div>
+
+            <div class="step" style="--order: 4;">
+                <div class="icon">🗄️</div>
+                <div class="step-title">PostgreSQL</div>
+                <div class="step-desc">Store in cloud database</div>
+            </div>
+        </div>
+
+        <!-- File Structure -->
+        <div class="files-section">
+            <h2 class="files-title">Project Structure</h2>
+            <div class="files-grid">
+                <div class="file-card">
+                    <div class="file-name">
+                        <div class="file-icon">🐍</div>
+                        main.py
+                    </div>
+                    <div class="file-purpose">
+                        Entry point that orchestrates the entire ETL process. Downloads data, filters flights, and calls module functions.
+                    </div>
+                </div>
+
+                <div class="file-card">
+                    <div class="file-name">
+                        <div class="file-icon">📦</div>
+                        csv_module.py
+                    </div>
+                    <div class="file-purpose">
+                        Core ETL functions: csv_downloader() for data retrieval and send_data_to_db() for database operations.
+                    </div>
+                </div>
+
+                <div class="file-card">
+                    <div class="file-name">
+                        <div class="file-icon">⚙️</div>
+                        config.json
+                    </div>
+                    <div class="file-purpose">
+                        Database configuration with credentials for Neon PostgreSQL cloud database connection.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack -->
+        <div class="tech-stack">
+            <div class="tech-badge">Python</div>
+            <div class="tech-badge">Pandas</div>
+            <div class="tech-badge">SQLAlchemy</div>
+            <div class="tech-badge">PostgreSQL</div>
+            <div class="tech-badge">Requests</div>
+            <div class="tech-badge">Neon DB</div>
+        </div>
+    </div>
+</body>
+</html>

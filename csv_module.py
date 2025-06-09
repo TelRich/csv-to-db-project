@@ -7,7 +7,7 @@ import json
 
 # Load configuration
 with open('config.json') as file:
-    config = json.load(file)["warehouse"]
+    config = json.load(file)["neon_analytics"]
 
 def csv_downloader(csv_url):
     try:
